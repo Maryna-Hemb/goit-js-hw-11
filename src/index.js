@@ -11,7 +11,7 @@ const galleryEl = document.querySelector(".gallery")
 const guardEl = document.querySelector(".js-guard")
 
 const newApiService = new ApiService();
-
+let gallery = new SimpleLightbox(".photo-card a", { captionDelay: 250 });
 
 formEl.addEventListener("submit", onGalleryMake);
 
@@ -27,9 +27,11 @@ function onGalleryMake(evt) {
           Notify.info(`Hooray! We found ${data.totalHits} images.`)
             galleryEl.innerHTML = createMarkupGallary(data);
             observer.observe(guardEl);
+            gallery.refresh();
         })
     .catch(err => console.log(err))
 }
+
 
 
 function createMarkupGallary(data) {
@@ -64,7 +66,8 @@ function createMarkupGallary(data) {
 </div>`).join('')
 }    
 
-let gallery = new SimpleLightbox(".photo-card a", { captionDelay: 250 });
+
+
 
 // scroll
 const options = {
