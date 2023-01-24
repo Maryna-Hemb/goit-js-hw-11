@@ -4,6 +4,7 @@ import SimpleLightbox from "simplelightbox"
 import "simplelightbox/dist/simple-lightbox.min.css";
 import { ApiService } from "./fetchImages";
 
+
 const formEl = document.querySelector(".search-form");
 const inputEl = document.querySelector("input")
 const buttonEl = document.querySelector("button")
@@ -11,28 +12,31 @@ const galleryEl = document.querySelector(".gallery")
 const guardEl = document.querySelector(".js-guard")
 
 const newApiService = new ApiService();
-let gallery = new SimpleLightbox(".photo-card a", { captionDelay: 250 });
+let gallery1 = new SimpleLightbox(".photo-card a", { captionDelay: 250 });
 
+
+inputEl.addEventListener("input", onInputValueNone);
 formEl.addEventListener("submit", onGalleryMake);
 
-function onGalleryMake(evt) {
-    evt.preventDefault();
-    newApiService.searchQuery = evt.currentTarget.elements.searchQuery.value;
-    
-    newApiService.resetPage();
-    newApiService.getImagesAPI()
-        .then(data => {
-            if (data.totalHits === 0) { inputEl.value = "";  return Notify.failure("Sorry, there are no images matching your search query. Please try again.") }
-           console.log(data);
-          Notify.info(`Hooray! We found ${data.totalHits} images.`)
-            galleryEl.innerHTML = createMarkupGallary(data);
-            observer.observe(guardEl);
-            gallery.refresh();
-        })
-    .catch(err => console.log(err))
-}
-
-
+async function onGalleryMake(evt) {
+  evt.preventDefault();
+  newApiService.resetPage();  
+  newApiService.searchQuery = evt.currentTarget.elements.searchQuery.value.trim();
+   if(newApiService.searchQuery.length > 0) {
+    try {
+      const galleryMake = await newApiService.getImagesAPI();
+      console.log(galleryMake);
+      if (galleryMake.totalHits === 0) {
+        inputEl.value = ""; galleryEl.innerHTML = "";
+        return Notify.failure("Sorry, there are no images matching your search query. Please try again.")
+      }
+      Notify.info(`Hooray! We found ${galleryMake.totalHits} images.`);
+      galleryEl.innerHTML = createMarkupGallary(galleryMake);
+      observer.observe(guardEl);
+      gallery1.refresh();      
+  } catch (error) {console.log(error)}
+   }
+ }
 
 function createMarkupGallary(data) {
      return data.hits.map(({
@@ -68,33 +72,40 @@ function createMarkupGallary(data) {
 
 
 
-
 // scroll
 const options = {
     root: null,
-    rootMargin: "600px",
+    rootMargin: "400px",
     treshold: 0
+}
+
+
+function onload(entries, observer) {
+  entries.forEach(async entry => {
+    if (entry.isIntersecting) {
+      try {
+        console.log("hello")
+        newApiService.incrementPage();
+        const galleryMake = await newApiService.getImagesAPI(); 
+        console.log(galleryMake);
+        galleryEl.insertAdjacentHTML('beforeend', createMarkupGallary(galleryMake))
+        const amount = newApiService.page* 40
+        console.log(amount)
+        if (amount >= galleryMake.totalHits) { observer.unobserve(guardEl); Notify.info("We're sorry, but you've reached the end of search results.")}
+        onInputValueNone()  
+         gallery1.refresh();
+      } catch (error) {console.log(error)
+      }      
+    }
+    
+  })
 }
 
 let observer = new IntersectionObserver(onload, options);
 
-function onload(entries, observer) {
-    entries.forEach(entry => {
-        if (entry.isIntersecting) {
-            console.log("hello")
-            newApiService.incrementPage();
-            newApiService.getImagesAPI()                
-                .then(data => {
-                    galleryEl.insertAdjacentHTML('beforeend', createMarkupGallary(data));
-                                     
-                })
-            .catch(err => Notify.info("We're sorry, but you've reached the end of search results."))
-        }
-        
-    })
-    
+function onInputValueNone() {
+  if (inputEl.value.trim().length === 0) { galleryEl.innerHTML = ""}
 }
-
 
 
 // const { height: cardHeight } = document

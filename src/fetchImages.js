@@ -12,8 +12,10 @@ export class ApiService{
     }
 
     async getImagesAPI() {
-     const PARAM_SEARCH_API = "image_type=photo&orientation=horizontal&safesearch=true"
-    const responce = await axios.get(`${API_ADRESS}?key=${KEY_PIXABAY}&q=${this.query}&${PARAM_SEARCH_API}&page=${this.page}per_page=40`)
+        const PARAM_SEARCH_API = "image_type=photo&orientation=horizontal&safesearch=true"
+        const PER_PAGE = "40"
+        const responce = await axios.get(`${API_ADRESS}?key=${KEY_PIXABAY}&q=${this.query}&${PARAM_SEARCH_API}&page=${this.page}&per_page=${PER_PAGE}`)
+    const amount = Math.ceil(responce.data.totalHits / this.per_page)
         return responce.data;
 }
  resetPage() {
@@ -22,6 +24,7 @@ export class ApiService{
     incrementPage() {
       this.page += 1  
     }
+
     get searchQuery() {
         return this.query;
     }
